@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package kv;
+option go_package = "github.com/Unnati3007/kv-store/proto";
+
+service KVService {
+  rpc Set(SetRequest)       returns (SetResponse);
+  rpc Get(GetRequest)       returns (GetResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc Leader(LeaderRequest) returns (LeaderResponse);
+}
+
+// Raft RPCs
+service RaftService {
+  rpc RequestVote(VoteRequest)     returns (VoteResponse);
+  rpc AppendEntries(AppendRequest) returns (AppendResponse);
+  rpc InstallSnapshot(SnapshotRequest) returns (SnapshotResponse);
+}
+
+message SetRequest    { string key = 1; string value = 2; }
+message SetResponse   { bool success = 1; string leader = 2; }
+message GetRequest    { string key = 1; }
+message GetResponse   { string value = 1; bool found = 2; }
+message DeleteRequest { string key = 1; }
+message DeleteResponse{ bool success = 1; }
+message LeaderRequest {}
+message LeaderResponse{ string leader_addr = 1; uint64 term = 2; }
+
+message LogEntry {
+  uint64 term  = 1;
+  uint64 index = 2;
+  bytes  data  = 3;
+}
+
+message VoteRequest {
+  uint64 term           = 1;
+  uint32 candidate_id   = 2;
+  uint64 last_log_index = 3;
+  uint64 last_log_term  = 4;
+}
+message VoteResponse { uint64 term = 1; bool granted = 2; }
+
+message AppendRequest {
+  uint64     term           = 1;
+  uint32     leader_id      = 2;
+  uint64     prev_log_index = 3;
+  uint64     prev_log_term  = 4;
+  repeated LogEntry entries = 5;
+  uint64     leader_commit  = 6;
+}
+message AppendResponse { uint64 term = 1; bool success = 2; uint64 match_index = 3; }
+
+message SnapshotRequest  { uint64 term = 1; uint32 leader_id = 2; uint64 last_index = 3; uint64 last_term = 4; bytes data = 5; }
+message SnapshotResponse { uint64 term = 1; }
